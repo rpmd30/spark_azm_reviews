@@ -1,4 +1,3 @@
-http://snap.stanford.edu/data/amazon/possible_dupes.txt.gz
 http://snap.stanford.edu/data/amazon/Amazon_Instant_Video.txt.gz
 http://snap.stanford.edu/data/amazon/Arts.txt.gz
 http://snap.stanford.edu/data/amazon/Automotive.txt.gz
