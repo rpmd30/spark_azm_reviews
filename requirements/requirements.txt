@@ -5,3 +5,4 @@ numpy
 pyspark
 spark-nlp==5.3.3
 mysql-connector-python
+aiohttp
