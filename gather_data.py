@@ -1,4 +1,6 @@
 import os
+import asyncio
+import aiohttp
 
 import urllib.request
 
@@ -11,18 +13,36 @@ output_dir = './data/raw_data'
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
 
-# Read the URLs from the links_list.txt file
-with open(links_file, 'r') as file:
-    urls = file.readlines()
 
-# Download the data from each URL and save it to the output directory
-for url in urls:
-    url = url.strip()  # Remove any leading/trailing whitespace or newline characters
-    filename = os.path.basename(url)  # Extract the filename from the URL
-    output_path = os.path.join(output_dir, filename)  # Create the output file path
 
+async def download_file(url, output_path):
     try:
-        urllib.request.urlretrieve(url, output_path)
-        print(f"Downloaded {filename} successfully.")
+        if os.path.exists(output_path):
+            print(f"{output_path} already exists. Skipping download.")
+            return
+        print(f"Starting to download {output_path}.")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                with open(output_path, 'wb') as file:
+                    while True:
+                        chunk = await response.content.read(1024)
+                        if not chunk:
+                            break
+                        file.write(chunk)
+        print(f"Downloaded {output_path} successfully.")
     except Exception as e:
-        print(f"Failed to download {filename}: {str(e)}")
+        print(f"Failed to download {output_path}: {str(e)}")
+
+async def main():
+    tasks = []
+    with open(links_file, 'r') as file:
+        urls = file.readlines()
+    for url in urls:
+        url = url.strip()
+        filename = os.path.basename(url)
+        output_path = os.path.join(output_dir, filename)
+        tasks.append(download_file(url, output_path))
+    await asyncio.gather(*tasks)
+
+if __name__ == "__main__":
+    asyncio.run(main())
