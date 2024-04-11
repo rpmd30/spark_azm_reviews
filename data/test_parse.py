@@ -2,11 +2,12 @@ import json
 import gzip
 
 def parse(filename):
-#   f = gzip.open(filename, 'rb')
-  f = open(filename, 'r')
+  f = gzip.open(filename, 'r')
+#   f = open(filename, 'r')
   entry = {}
   for l in f:
-    l = l.strip()
+    l = l.strip().decode('utf-8')
+    print(l)
     colonPos = l.find(':')
     if colonPos == -1:
       yield entry
@@ -17,6 +18,7 @@ def parse(filename):
     entry[eName] = rest
   yield entry
 
-for e in parse("all.txt"):
+for e in parse("./raw_data/Arts.txt.gz"):
   print(json.dumps(e))
+  print(len(e['product/productId']))
   break

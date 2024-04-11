@@ -16,11 +16,14 @@ run:
 run-scaled:
 	make down && docker-compose up --scale spark-worker=3 -d
 
-run-d:
-	make down && docker-compose up -d
-
 stop:
-	docker-compose stop
+	docker-compose down
 
 submit:
 	docker exec da-spark-master spark-submit --packages com.johnsnowlabs.nlp:spark-nlp_2.12:5.3.3 --master spark://spark-master:7077 --deploy-mode client ./apps/$(app)
+
+clean:
+	docker compose down && docker system prune && rm ./data/raw_data/* && rm ./mysql_data/*
+
+clean-all:
+	docker compose down && docker system prune -all && rm ./data/raw_data/* && rm ./mysql_data/*
