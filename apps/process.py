@@ -21,10 +21,28 @@ products = (
 )
 
 products.show()
+product_id = products.select("id").take(10)[-1].id
 
-from sparknlp.pretrained import PretrainedPipeline
+print("p_id: ", product_id)
 
-explain_document_pipeline = PretrainedPipeline("explain_document_ml")
-annotations = explain_document_pipeline.annotate("We are very happy about SparkNLP")
-print(annotations)
-print(type(annotations))
+reviews = (
+    spark.read.format("jdbc")
+    .option("driver", "com.mysql.cj.jdbc.Driver")
+    .option("url", "jdbc:mysql://mysql-server:3306/product_analysis")
+    .option("numPartitions", 5)
+    .option("query", f"select * from reviews where product_id = {product_id}")
+    .option("user", "root")
+    .option("password", "root")
+    .load()
+)
+reviews.show()
+
+# high_helpful_reviews = reviews.filter(reviews.helpfulness == 1).show()
+helpful_reviews = reviews.join(products, reviews.product_id == products.id).show()
+
+# from sparknlp.pretrained import PretrainedPipeline
+
+# explain_document_pipeline = PretrainedPipeline("explain_document_ml")
+# annotations = explain_document_pipeline.annotate("We are very happy about SparkNLP")
+# print(annotations)
+# print(type(annotations))
