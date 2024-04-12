@@ -11,9 +11,9 @@ CREATE UNIQUE INDEX id_pk ON products (id);
 CREATE TABLE reviews (
   id INT primary key not null AUTO_INCREMENT,
   product_id CHAR(11) NOT NULL,
-  helpfulness CHAR(7) NULL DEFAULT NULL,
+  helpfulness float DEFAULT 0,
   rating FLOAT NOT NULL,
-  summary VARCHAR(255) NULL DEFAULT NULL,
+  summary VARCHAR(512) NULL DEFAULT NULL,
   processed BIT NOT NULL DEFAULT 0
 );
 ALTER TABLE reviews

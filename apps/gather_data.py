@@ -5,10 +5,10 @@ import aiohttp
 import urllib.request
 
 # Define the path to the links_list.txt file
-links_file = 'links_list.txt'
+links_file = '/opt/spark/data/links_list.txt'
 
 # Define the path to the data/raw_data directory
-output_dir = './data/raw_data'
+output_dir = '/opt/spark/data/raw_data'
 
 # Create the output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
