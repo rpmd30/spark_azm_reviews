@@ -37,12 +37,10 @@ con = mysql.connector.connect(user='root', password='root',
                               database='product_analysis')
 
 curs = con.cursor(dictionary=True)
-curs.execute("show tables")
-tables = curs.fetchall()
 curs.execute("DROP TABLE IF EXISTS processed_review")
 curs.execute("DROP TABLE IF EXISTS reviews")
 curs.execute("DROP TABLE IF EXISTS products")
 
 res = curs.execute(table_create_query)
-print(res)
 con.close()
+print("Tables created successfully.")
