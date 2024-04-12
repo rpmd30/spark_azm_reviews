@@ -54,7 +54,7 @@ services:
       - '8306:3306'
     environment:
       - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=products
+      - MYSQL_DATABASE=product_analysis
       - MYSQL_USER=user
       - MYSQL_PASSWORD=root
       - MYSQL_HOST=0.0.0.0
