@@ -25,6 +25,7 @@ async def download_file(url, output_path):
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 with open(output_path, 'wb') as file:
+                    # The website is not consistent. 
                     while True:
                         chunk = await response.content.read(1024)
                         if not chunk:
