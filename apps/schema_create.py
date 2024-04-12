@@ -1,3 +1,8 @@
+import mysql.connector
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+
 table_create_query = """
 CREATE TABLE products (
   id CHAR(11) PRIMARY KEY NOT NULL,
@@ -30,11 +35,9 @@ ADD CONSTRAINT FK_reviews_analysis
 FOREIGN KEY (review_id) REFERENCES reviews(id);
 """
 
-import mysql.connector
-
-con = mysql.connector.connect(user='root', password='root',
-                              host='mysql-server',
-                              database='product_analysis')
+con = mysql.connector.connect(
+    user="root", password="root", host="mysql-server", database="product_analysis"
+)
 
 curs = con.cursor(dictionary=True)
 curs.execute("DROP TABLE IF EXISTS processed_review")
@@ -44,3 +47,4 @@ curs.execute("DROP TABLE IF EXISTS products")
 res = curs.execute(table_create_query)
 con.close()
 print("Tables created successfully.")
+spark.stop()

@@ -2,7 +2,8 @@ import os
 import asyncio
 import aiohttp
 
-import urllib.request
+
+from pyspark.sql import SparkSession
 
 # Define the path to the links_list.txt file
 links_file = '/opt/spark/data/links_list.txt'
@@ -34,6 +35,7 @@ async def download_file(url, output_path):
         print(f"Failed to download {output_path}: {str(e)}")
 
 async def main():
+    spark = SparkSession.builder.getOrCreate()
     tasks = []
     with open(links_file, 'r') as file:
         urls = file.readlines()
@@ -43,6 +45,7 @@ async def main():
         output_path = os.path.join(output_dir, filename)
         tasks.append(download_file(url, output_path))
     await asyncio.gather(*tasks)
+    spark.stop()
 
 if __name__ == "__main__":
     asyncio.run(main())

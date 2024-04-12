@@ -2,6 +2,9 @@ import json
 import gzip
 import os
 import traceback
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
 
 DATA_DIR = "/opt/spark/data/raw_data"
 
@@ -54,6 +57,7 @@ for file in list_files:
                 review_helpfulness = int(helpfulness_split[0]) / int(helpfulness_split[1])
             except:
                 pass
+            # This is very inefficient, but we are not going to optimize it for now.
             curs.execute(
                 INSERT_PRODUCT_QUERY, (product_id, product_title, 0, product_cateory)
             )
@@ -73,3 +77,4 @@ for file in list_files:
 con.commit()
 curs.close()
 con.close()
+spark.stop()

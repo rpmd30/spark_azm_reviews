@@ -13,7 +13,12 @@
 11. run `make submit app=gather_data.py`
 12. run `make submit app=schema_create.py`
 13. run `make submit app=ingest.py`
+
+
+# Basic Architecture:
+![Architecture](image.png)
+
 # Projects referenced:
 
-https://medium.com/@MarinAgli1/setting-up-a-spark-standalone-cluster-on-docker-in-layman-terms-8cbdc9fdd14b
-http://snap.stanford.edu/data/web-Amazon-links.html
+- https://medium.com/@MarinAgli1/setting-up-a-spark-standalone-cluster-on-docker-in-layman-terms-8cbdc9fdd14b
+- http://snap.stanford.edu/data/web-Amazon-links.html
