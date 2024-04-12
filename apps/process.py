@@ -25,21 +25,25 @@ product_id = products.select("id").take(10)[-1].id
 
 print("p_id: ", product_id)
 
-reviews = (
-    spark.read.format("jdbc")
-    .option("driver", "com.mysql.cj.jdbc.Driver")
-    .option("url", "jdbc:mysql://mysql-server:3306/product_analysis")
-    .option("numPartitions", 5)
-    .option("query", f"select * from reviews where product_id = {product_id}")
-    .option("user", "root")
-    .option("password", "root")
-    .load()
-)
-reviews.show()
+def get_reviews(product_id):
+    reviews = (
+        spark.read.format("jdbc")
+        .option("driver", "com.mysql.cj.jdbc.Driver")
+        .option("url", "jdbc:mysql://mysql-server:3306/product_analysis")
+        .option("numPartitions", 5)
+        .option("query", f"select * from reviews where product_id = {product_id}")
+        .option("user", "root")
+        .option("password", "root")
+        .load()
+    )
+    reviews.show()
 
-# high_helpful_reviews = reviews.filter(reviews.helpfulness == 1).show()
-helpful_reviews = reviews.join(products, reviews.product_id == products.id).show()
+product_ids = products.select(["id",'title']).collect()
 
+for p_id in product_ids:
+    
+    get_reviews(p_id.id)
+    
 # from sparknlp.pretrained import PretrainedPipeline
 
 # explain_document_pipeline = PretrainedPipeline("explain_document_ml")
