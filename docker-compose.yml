@@ -60,12 +60,13 @@ services:
       - MYSQL_HOST=0.0.0.0
     volumes:
       - ./mysql_data:/var/lib/mysql
-  
-  # python-server:
-  #   container_name: python-server
-  #   build: ./webservice.Dockfile
-  #   image: python-server-image
-  #   ports:
-  #     - '8000:8000'
+  jupyter:
+    build:
+      dockerfile: ./jupyter.Dockerfile
+    ports:
+      - 8889:8888
+    command: "start-notebook.sh --NotebookApp.token="
+    volumes:
+      - ./jupyter-data:/home/jovyan/notebooks
 volumes:
   spark-logs:

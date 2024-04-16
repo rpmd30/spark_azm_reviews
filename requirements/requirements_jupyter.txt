@@ -1,0 +1,7 @@
+ipython
+pandas
+pyarrow
+numpy
+mysql-connector-python
+aiohttp
+jupyterlab
