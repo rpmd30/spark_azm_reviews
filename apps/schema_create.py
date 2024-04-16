@@ -33,6 +33,8 @@ CREATE TABLE processed_review (
 ALTER TABLE processed_reviews
 ADD CONSTRAINT FK_reviews_analysis
 FOREIGN KEY (review_id) REFERENCES reviews(id);
+
+CREATE UNIQUE INDEX review_id_metric_pk ON processed_reviews (review_id, metric_type);
 """
 
 con = mysql.connector.connect(
