@@ -4,8 +4,8 @@ from sparknlp.base import *
 
 spark = (
     SparkSession.builder.appName("processor")
-    .master("local[*]") \
-    .config("spark.driver.memory", "16G") \
+    .master("local[*]")
+    .config("spark.driver.memory", "16G")
     .config("spark.jars.packages", "com.johnsnowlabs.nlp:spark-nlp_2.12:5.3.3")
     .config("spark.jars.packages", "mysql-connector-java-8.0.13")
     .getOrCreate()
@@ -56,3 +56,5 @@ product_ids = products.select(["id",'title']).collect()
 
 for p_id in product_ids:
     get_reviews(p_id.id)
+
+spark.stop()
