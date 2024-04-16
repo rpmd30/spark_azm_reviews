@@ -2,6 +2,21 @@ from pyspark.sql import SparkSession
 from sparknlp.pretrained import PretrainedPipeline
 from sparknlp.base import *
 import pandas as pd
+import json
+import mysql.connector
+from sparknlp.pretrained import PretrainedPipeline
+
+# Import the required modules and classes
+from sparknlp.base import DocumentAssembler, Pipeline, LightPipeline
+from sparknlp.annotator import SentenceDetector, Tokenizer, YakeKeywordExtraction
+import pyspark.sql.functions as F
+
+con = mysql.connector.connect(
+    user="root", password="root", host="mysql-server", database="product_analysis"
+)
+
+curs = con.cursor(dictionary=True)
+INSERT_QUERY = "INSERT ignore INTO processed_review (review_id, metric_type, metric) VALUES (%s,%s,%s)"
 
 spark = (
     SparkSession.builder.appName("processor")
@@ -11,13 +26,6 @@ spark = (
     .config("spark.jars.packages", "mysql-connector-java-8.0.13")
     .getOrCreate()
 )
-
-from sparknlp.pretrained import PretrainedPipeline
-
-# Import the required modules and classes
-from sparknlp.base import DocumentAssembler, Pipeline, LightPipeline
-from sparknlp.annotator import SentenceDetector, Tokenizer, YakeKeywordExtraction
-import pyspark.sql.functions as F
 
 # Step 1: Transforms raw texts to `document` annotation
 document = DocumentAssembler().setInputCol("text").setOutputCol("document")
@@ -34,7 +42,12 @@ token = (
 )
 
 # Step 4: Keyword Extraction
-keywords = YakeKeywordExtraction().setInputCols("token").setOutputCol("keywords")
+keywords = (
+    YakeKeywordExtraction()
+    .setThreshold(0.7)
+    .setInputCols("token")
+    .setOutputCol("keywords")
+)
 # Define the pipeline
 yake_pipeline = Pipeline(stages=[document, sentenceDetector, token, keywords])
 
@@ -74,20 +87,44 @@ def get_reviews(product_id):
         .load()
     )
     reviews.show()
-    results = []
-    for row in reviews.select("summary").collect():
+    for row in reviews.select("summary", "id").collect():
         annotations = light_model.fullAnnotate(row.summary)
-        keys_df = pd.DataFrame(
-            [
-                (k.result, k.begin, k.end, k.metadata["score"], k.metadata["sentence"])
-                for k in annotations[0]["keywords"]
-            ],
-            columns=["keywords", "begin", "end", "score", "sentence"],
+        # keys_df = pd.DataFrame(
+        #     [
+        #         (k.result, k.begin, k.end, k.metadata["score"], k.metadata["sentence"])
+        #         for k in annotations[0]["keywords"]
+        #     ],
+        #     columns=["keywords", "begin", "end", "score", "sentence"],
+        # )
+        # keys_df["score"] = keys_df["score"].astype(float)
+        if len(annotations[0]["keywords"]) == 0:
+            continue
+        payload = {
+            "metric_type": "key_phrases",
+            "metric": {
+                "phrases": [
+                    {
+                        "phrase": k.result,
+                        "score": k.metadata["score"],
+                        "sentence": k.metadata["sentence"],
+                    }
+                    for k in annotations[0]["keywords"]
+                ]
+            },
+            "review_id": row.id,
+        }
+        curs.execute(
+            INSERT_QUERY,
+            (
+                payload["review_id"],
+                payload["metric_type"],
+                json.dumps(payload["metric"]),
+            ),
         )
-        keys_df["score"] = keys_df["score"].astype(float)
-
+        print(f"{INSERT_QUERY}, {payload['review_id']}")
+        con.commit()
         # ordered by relevance
-        print(keys_df.sort_values(["sentence", "score"]).head(10))
+        # print(keys_df.sort_values(["sentence", "score"]).head(10))
         # results.append(list(zip(annotations['lemmas'],annotations['pos'])))
         # print(results)
     # except Exception as e:
