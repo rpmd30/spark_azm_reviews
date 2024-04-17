@@ -75,42 +75,38 @@ print("p_id: ", product_id)
 
 
 def get_reviews(product_id):
-    # try:
-    reviews = (
-        spark.read.format("jdbc")
-        .option("driver", "com.mysql.cj.jdbc.Driver")
-        .option("url", "jdbc:mysql://mysql-server:3306/product_analysis")
-        .option("numPartitions", 5)
-        .option("query", f"select * from reviews where product_id = {product_id}")
-        .option("user", "root")
-        .option("password", "root")
-        .load()
-    )
-    reviews.show()
+    try:
+        reviews = (
+            spark.read.format("jdbc")
+            .option("driver", "com.mysql.cj.jdbc.Driver")
+            .option("url", "jdbc:mysql://mysql-server:3306/product_analysis")
+            .option("numPartitions", 5)
+            .option("query", f"select * from reviews where product_id = {product_id}")
+            .option("user", "root")
+            .option("password", "root")
+            .load()
+        )
+        reviews.show()
+    except Exception as e:
+        print(e)
+        return
     for row in reviews.select("summary", "id").collect():
         annotations = light_model.fullAnnotate(row.summary)
-        # keys_df = pd.DataFrame(
-        #     [
-        #         (k.result, k.begin, k.end, k.metadata["score"], k.metadata["sentence"])
-        #         for k in annotations[0]["keywords"]
-        #     ],
-        #     columns=["keywords", "begin", "end", "score", "sentence"],
-        # )
-        # keys_df["score"] = keys_df["score"].astype(float)
+        print(f"len keywords:{len(annotations[0]['keywords'])}")
         if len(annotations[0]["keywords"]) == 0:
             continue
+        phrases = [
+            {
+                "phrase": k.result,
+                "score": float(k.metadata["score"]),
+                "sentence": k.metadata["sentence"],
+            }
+            for k in annotations[0]["keywords"] if float(k.metadata['score']) > 0.5
+        ]
+        phrases = sorted(phrases, key=lambda x: x["score"], reverse=True)
         payload = {
             "metric_type": "key_phrases",
-            "metric": {
-                "phrases": [
-                    {
-                        "phrase": k.result,
-                        "score": k.metadata["score"],
-                        "sentence": k.metadata["sentence"],
-                    }
-                    for k in annotations[0]["keywords"]
-                ]
-            },
+            "metric": {"phrases": phrases},
             "review_id": row.id,
         }
         curs.execute(
