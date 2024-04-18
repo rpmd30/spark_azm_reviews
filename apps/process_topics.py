@@ -25,7 +25,7 @@ con = mysql.connector.connect(
 )
 
 curs = con.cursor(dictionary=True)
-INSERT_QUERY = "INSERT ignore INTO processed_review (review_id, metric_type, metric) VALUES (%s,%s,%s)"
+# INSERT_QUERY = "INSERT ignore INTO processed_review (review_id, metric_type, metric) VALUES (%s,%s,%s)"
 
 spark = (
     SparkSession.builder.appName("processor")
@@ -120,7 +120,7 @@ def process_reviews(product_id):
             .option("driver", "com.mysql.cj.jdbc.Driver")
             .option("url", "jdbc:mysql://mysql-server:3306/product_analysis")
             .option("numPartitions", 5)
-            .option("query", f"select * from reviews where product_id = {product_id}")
+            .option("query", f"select * from reviews where product_id = {product_id} and processed = 0")
             .option("user", "root")
             .option("password", "root")
             .load()
@@ -129,50 +129,52 @@ def process_reviews(product_id):
     except Exception as e:
         print(e)
 
-    try:
-        text = reviews.select("summary", "id")
+    # try:
+    text = reviews.select("summary", "id")
 
-        processed_review = pipeline.fit(text).transform(text)
-        processed_review.show()
+    processed_review = pipeline.fit(text).transform(text)
+    processed_review.show()
 
-        tfizer = CountVectorizer(inputCol="finished_ngrams", outputCol="tf_features")
+    tfizer = CountVectorizer(inputCol="finished_ngrams", outputCol="tf_features")
 
-        tf_model = tfizer.fit(processed_review)
-        tf_result = tf_model.transform(processed_review)
+    tf_model = tfizer.fit(processed_review)
+    tf_result = tf_model.transform(processed_review)
 
-        idfizer = IDF(inputCol="tf_features", outputCol="tf_idf_features")
-        idf_model = idfizer.fit(tf_result)
-        tfidf_result = idf_model.transform(tf_result)
+    idfizer = IDF(inputCol="tf_features", outputCol="tf_idf_features")
+    idf_model = idfizer.fit(tf_result)
+    tfidf_result = idf_model.transform(tf_result)
 
-        num_topics = 6
-        max_iter = 10
-        lda = LDA(k=num_topics, maxIter=max_iter, featuresCol="tf_idf_features")
-        lda_model = lda.fit(tfidf_result)
+    num_topics = 6
+    max_iter = 10
+    lda = LDA(k=num_topics, maxIter=max_iter, featuresCol="tf_idf_features")
+    lda_model = lda.fit(tfidf_result)
 
-        vocab = tf_model.vocabulary
+    vocab = tf_model.vocabulary
 
-        def get_words(token_list):
-            return [vocab[token_id] for token_id in token_list]
+    def get_words(token_list):
+        return [vocab[token_id] for token_id in token_list]
 
-        udf_to_words = F.udf(get_words, T.ArrayType(T.StringType()))
+    udf_to_words = F.udf(get_words, T.ArrayType(T.StringType()))
 
-        num_top_words = 7
-        topics = lda_model.describeTopics(num_top_words).withColumn(
-            "topicWords", udf_to_words(F.col("termIndices"))
-        )
-        topics_list = topics.select("topicWords").collect()
-        INSERT_QUERY = "INSERT ignore INTO agg_product_review (product_id, metric_type, metric) VALUES (%s,%s,%s)"
-        consolidated_payload = []
-        for t in topics_list:
-            consolidated_payload.extend(t.topicWords)
-        consolidated_payload = list(set(consolidated_payload))
-        print(consolidated_payload)
-        curs.execute(
-            INSERT_QUERY, (product_id, "topic_analysis", json.dumps(consolidated_payload))
-        )
-        con.commit()
-    except Exception as e:
-        print(f"SOMETHING HAS GONE WRONG!!!!!!!!!!!!!!!!:{e}")
+    num_top_words = 7
+    topics = lda_model.describeTopics(num_top_words).withColumn(
+        "topicWords", udf_to_words(F.col("termIndices"))
+    )
+    topics_list = topics.select("topicWords").collect()
+    INSERT_QUERY = "INSERT ignore INTO agg_product_review (product_id, metric_type, metric) VALUES (%s,%s,%s)"
+    consolidated_payload = []
+    for t in topics_list:
+        consolidated_payload.extend(t.topicWords)
+    consolidated_payload = list(set(consolidated_payload))
+    print(consolidated_payload)
+    curs.execute(
+        INSERT_QUERY, (product_id, "topic_analysis", json.dumps(consolidated_payload))
+    )
+    curs.execute('update products set processed = 1 where id = %s', (product_id,))
+            
+    con.commit()
+    # except Exception as e:
+    #     print(f"SOMETHING HAS GONE WRONG!!!!!!!!!!!!!!!!:{e}")
 
 
 

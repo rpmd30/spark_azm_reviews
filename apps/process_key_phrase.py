@@ -81,7 +81,7 @@ def get_reviews(product_id):
             .option("driver", "com.mysql.cj.jdbc.Driver")
             .option("url", "jdbc:mysql://mysql-server:3306/product_analysis")
             .option("numPartitions", 5)
-            .option("query", f"select * from reviews where product_id = {product_id}")
+            .option("query", f"select * from reviews where product_id = {product_id} and processed = 0")
             .option("user", "root")
             .option("password", "root")
             .load()
@@ -119,6 +119,7 @@ def get_reviews(product_id):
                 ),
             )
             print(f"{INSERT_QUERY}, {payload['review_id']}")
+            curs.execute('update reviews set processed = 1 where id = %s', (payload['review_id'],))
             con.commit()
         except Exception as e:
             print("Error: ", e)
