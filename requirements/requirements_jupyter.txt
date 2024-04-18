@@ -5,3 +5,5 @@ numpy
 mysql-connector-python
 aiohttp
 jupyterlab
+seaborn
+nltk
