@@ -128,47 +128,52 @@ def process_reviews(product_id):
         reviews.show()
     except Exception as e:
         print(e)
-    text = reviews.select("summary", "id")
 
-    processed_review = pipeline.fit(text).transform(text)
-    processed_review.show()
+    try:
+        text = reviews.select("summary", "id")
 
-    tfizer = CountVectorizer(inputCol="finished_ngrams", outputCol="tf_features")
+        processed_review = pipeline.fit(text).transform(text)
+        processed_review.show()
 
-    tf_model = tfizer.fit(processed_review)
-    tf_result = tf_model.transform(processed_review)
+        tfizer = CountVectorizer(inputCol="finished_ngrams", outputCol="tf_features")
 
-    idfizer = IDF(inputCol="tf_features", outputCol="tf_idf_features")
-    idf_model = idfizer.fit(tf_result)
-    tfidf_result = idf_model.transform(tf_result)
+        tf_model = tfizer.fit(processed_review)
+        tf_result = tf_model.transform(processed_review)
 
-    num_topics = 6
-    max_iter = 10
-    lda = LDA(k=num_topics, maxIter=max_iter, featuresCol="tf_idf_features")
-    lda_model = lda.fit(tfidf_result)
+        idfizer = IDF(inputCol="tf_features", outputCol="tf_idf_features")
+        idf_model = idfizer.fit(tf_result)
+        tfidf_result = idf_model.transform(tf_result)
 
-    vocab = tf_model.vocabulary
+        num_topics = 6
+        max_iter = 10
+        lda = LDA(k=num_topics, maxIter=max_iter, featuresCol="tf_idf_features")
+        lda_model = lda.fit(tfidf_result)
 
-    def get_words(token_list):
-        return [vocab[token_id] for token_id in token_list]
+        vocab = tf_model.vocabulary
 
-    udf_to_words = F.udf(get_words, T.ArrayType(T.StringType()))
+        def get_words(token_list):
+            return [vocab[token_id] for token_id in token_list]
 
-    num_top_words = 7
-    topics = lda_model.describeTopics(num_top_words).withColumn(
-        "topicWords", udf_to_words(F.col("termIndices"))
-    )
-    topics_list = topics.select("topicWords").collect()
-    INSERT_QUERY = "INSERT ignore INTO agg_product_review (product_id, metric_type, metric) VALUES (%s,%s,%s)"
-    consolidated_payload = []
-    for t in topics_list:
-        consolidated_payload.extend(t.topicWords)
-    consolidated_payload = list(set(consolidated_payload))
-    print(consolidated_payload)
-    curs.execute(
-        INSERT_QUERY, (product_id, "topic_analysis", json.dumps(consolidated_payload))
-    )
-    con.commit()
+        udf_to_words = F.udf(get_words, T.ArrayType(T.StringType()))
+
+        num_top_words = 7
+        topics = lda_model.describeTopics(num_top_words).withColumn(
+            "topicWords", udf_to_words(F.col("termIndices"))
+        )
+        topics_list = topics.select("topicWords").collect()
+        INSERT_QUERY = "INSERT ignore INTO agg_product_review (product_id, metric_type, metric) VALUES (%s,%s,%s)"
+        consolidated_payload = []
+        for t in topics_list:
+            consolidated_payload.extend(t.topicWords)
+        consolidated_payload = list(set(consolidated_payload))
+        print(consolidated_payload)
+        curs.execute(
+            INSERT_QUERY, (product_id, "topic_analysis", json.dumps(consolidated_payload))
+        )
+        con.commit()
+    except Exception as e:
+        print(f"SOMETHING HAS GONE WRONG!!!!!!!!!!!!!!!!:{e}")
+
 
 
 products.show()
