@@ -35,6 +35,17 @@ ADD CONSTRAINT FK_reviews_analysis
 FOREIGN KEY (review_id) REFERENCES reviews(id);
 
 CREATE UNIQUE INDEX review_id_metric_pk ON processed_reviews (review_id, metric_type);
+
+CREATE TABLE agg_product_review (
+  id int AUTO_INCREMENT primary key not null,
+  product_id CHAR(11) NOT NULL,
+  metric_type VARCHAR(255) NULL DEFAULT NULL,
+  metric blob DEFAULT NULL
+);
+ALTER TABLE agg_product_review
+ADD CONSTRAINT FK_product_analysis
+FOREIGN KEY (product_id) REFERENCES products(id);
+CREATE UNIQUE INDEX product_id_metric_pk ON agg_product_review (product_id, metric_type);
 """
 
 con = mysql.connector.connect(
@@ -43,6 +54,7 @@ con = mysql.connector.connect(
 
 curs = con.cursor(dictionary=True)
 curs.execute("DROP TABLE IF EXISTS processed_review")
+curs.execute("DROP TABLE IF EXISTS agg_product_review")
 curs.execute("DROP TABLE IF EXISTS reviews")
 curs.execute("DROP TABLE IF EXISTS products")
 

@@ -26,4 +26,4 @@ clean:
 	docker compose down && docker system prune
 
 clean-all:
-	docker compose down && docker system prune -all && rm -f ./mysql_data/*
+	docker compose down && docker system prune -all && rm -rf ./mysql_data/*

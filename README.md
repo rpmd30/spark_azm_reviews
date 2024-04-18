@@ -30,3 +30,4 @@
 
 - https://medium.com/@MarinAgli1/setting-up-a-spark-standalone-cluster-on-docker-in-layman-terms-8cbdc9fdd14b
 - http://snap.stanford.edu/data/web-Amazon-links.html
+- https://medium.com/trustyou-engineering/topic-modelling-with-pyspark-and-spark-nlp-a99d063f1a6e

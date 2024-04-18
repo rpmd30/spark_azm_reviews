@@ -91,40 +91,37 @@ def get_reviews(product_id):
         print(e)
         return
     for row in reviews.select("summary", "id").collect():
-        annotations = light_model.fullAnnotate(row.summary)
-        print(f"len keywords:{len(annotations[0]['keywords'])}")
-        if len(annotations[0]["keywords"]) == 0:
-            continue
-        phrases = [
-            {
-                "phrase": k.result,
-                "score": float(k.metadata["score"]),
-                "sentence": k.metadata["sentence"],
+        try:
+            annotations = light_model.fullAnnotate(row.summary)
+            print(f"len keywords:{len(annotations[0]['keywords'])}")
+            if len(annotations[0]["keywords"]) == 0:
+                continue
+            phrases = [
+                {
+                    "phrase": k.result,
+                    "score": float(k.metadata["score"]),
+                    "sentence": k.metadata["sentence"],
+                }
+                for k in annotations[0]["keywords"] if float(k.metadata['score']) > 0.5
+            ]
+            phrases = sorted(phrases, key=lambda x: x["score"], reverse=True)
+            payload = {
+                "metric_type": "key_phrases",
+                "metric": {"phrases": phrases},
+                "review_id": row.id,
             }
-            for k in annotations[0]["keywords"] if float(k.metadata['score']) > 0.5
-        ]
-        phrases = sorted(phrases, key=lambda x: x["score"], reverse=True)
-        payload = {
-            "metric_type": "key_phrases",
-            "metric": {"phrases": phrases},
-            "review_id": row.id,
-        }
-        curs.execute(
-            INSERT_QUERY,
-            (
-                payload["review_id"],
-                payload["metric_type"],
-                json.dumps(payload["metric"]),
-            ),
-        )
-        print(f"{INSERT_QUERY}, {payload['review_id']}")
-        con.commit()
-        # ordered by relevance
-        # print(keys_df.sort_values(["sentence", "score"]).head(10))
-        # results.append(list(zip(annotations['lemmas'],annotations['pos'])))
-        # print(results)
-    # except Exception as e:
-    #     print("Error: ", e)
+            curs.execute(
+                INSERT_QUERY,
+                (
+                    payload["review_id"],
+                    payload["metric_type"],
+                    json.dumps(payload["metric"]),
+                ),
+            )
+            print(f"{INSERT_QUERY}, {payload['review_id']}")
+            con.commit()
+        except Exception as e:
+            print("Error: ", e)
 
 
 product_ids = products.select(["id", "title"]).collect()
