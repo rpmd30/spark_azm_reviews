@@ -102,9 +102,11 @@ def get_reviews(product_id):
                     "score": float(k.metadata["score"]),
                     "sentence": k.metadata["sentence"],
                 }
-                for k in annotations[0]["keywords"] if float(k.metadata['score']) > 0.5
+                for k in annotations[0]["keywords"] if float(k.metadata['score']) > 0.2
             ]
-            phrases = sorted(phrases, key=lambda x: x["score"], reverse=True)
+            phrases = sorted(phrases, key=lambda x: x["score"], reverse=True)[:5]
+            if len(phrases) == 0:
+                continue
             payload = {
                 "metric_type": "key_phrases",
                 "metric": {"phrases": phrases},
