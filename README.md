@@ -5,6 +5,8 @@
 2. Install Docker Desktop(https://docs.docker.com/desktop/wsl/)
 3. Continue to step 3 in general setup below
 
+### NOTE:
+- If you're on windows. Make sure to clone git repo inside of WSL to avoid new line character issues.
 
 
 ##### General Setup:
@@ -21,6 +23,9 @@
 11. run `make submit app=gather_data.py`
 12. run `make submit app=schema_create.py`
 13. run `make submit app=ingest.py`
+14. run `make submit app=process_key_phrases.py`
+15. run `make submit app=process_topics.py`
+16. Go to `https://localhost:8889` for jupyter notebook for reports.
 
 
 # Basic Architecture:
