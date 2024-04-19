@@ -1,15 +1,11 @@
 from pyspark.sql import SparkSession
-from sparknlp.pretrained import PretrainedPipeline
 from sparknlp.base import *
-import pandas as pd
 import json
 import mysql.connector
-from sparknlp.pretrained import PretrainedPipeline
 
 # Import the required modules and classes
 from sparknlp.base import DocumentAssembler, Pipeline, LightPipeline
 from sparknlp.annotator import SentenceDetector, Tokenizer, YakeKeywordExtraction
-import pyspark.sql.functions as F
 
 con = mysql.connector.connect(
     user="root", password="root", host="mysql-server", database="product_analysis"
